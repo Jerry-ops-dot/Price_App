@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Camera, Search, Mic, ChevronDown, ChevronUp } from 'lucide-react';
 import { Master_Product, Product_Raw_Data, categoryStandards } from '../mockData/Master_DB';
 import { parseUnit, calculateStandardPrice } from '../utils/priceEngine';
@@ -12,6 +12,8 @@ export default function SearchCompare() {
   const [groupedResults, setGroupedResults] = useState([]);
   const [expandedMaster, setExpandedMaster] = useState(null);
   const [isScanning, setIsScanning] = useState(null);
+  const [isSearchingText, setIsSearchingText] = useState(false);
+  const debounceTimer = useRef(null);
 
   useEffect(() => {
     const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
@@ -76,22 +78,31 @@ export default function SearchCompare() {
     const val = e.target.value;
     setSearchTerm(val);
     
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    
     if (!val) {
       computeAndGroupResults(Product_Raw_Data, userPrefs, null);
       setExpandedMaster(null);
+      setIsSearchingText(false);
       return;
     }
     
-    // Run NER NLP Pipeline
-    const { matchedMasterId } = runNERPipeline(val);
-    
-    if (matchedMasterId) {
-      computeAndGroupResults(Product_Raw_Data, userPrefs, matchedMasterId);
-    } else {
-      // Fallback: regular string match on raw data
-      const filtered = Product_Raw_Data.filter(p => p.name.includes(val) || p.mall_name.includes(val));
-      computeAndGroupResults(filtered, userPrefs, null);
-    }
+    setIsSearchingText(true);
+    setGroupedResults([]); // clear results for "loading" effect
+
+    debounceTimer.current = setTimeout(() => {
+      // Run NER NLP Pipeline
+      const { matchedMasterId } = runNERPipeline(val);
+      
+      if (matchedMasterId) {
+        computeAndGroupResults(Product_Raw_Data, userPrefs, matchedMasterId);
+      } else {
+        // Fallback: regular string match on raw data
+        const filtered = Product_Raw_Data.filter(p => p.name.includes(val) || p.mall_name.includes(val));
+        computeAndGroupResults(filtered, userPrefs, null);
+      }
+      setIsSearchingText(false);
+    }, 500); // 500ms delay to simulate API search
   };
 
   const handleVisualSearch = () => {
@@ -142,9 +153,14 @@ export default function SearchCompare() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {groupedResults.length === 0 && <div style={{textAlign:'center', padding:'2rem', color:'var(--text-muted)'}}>검색 결과가 없습니다.</div>}
+        {isSearchingText && (
+          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--primary)', fontWeight: 700 }}>
+            결과를 분석 중입니다... 🔄
+          </div>
+        )}
+        {!isSearchingText && groupedResults.length === 0 && <div style={{textAlign:'center', padding:'2rem', color:'var(--text-muted)'}}>검색 결과가 없습니다.</div>}
         
-        {groupedResults.map((group, idx) => {
+        {!isSearchingText && groupedResults.map((group, idx) => {
           const isExpanded = expandedMaster === group.masterInfo.master_id || groupedResults.length === 1;
           const bestDeal = group.items[0]; // Already sorted by unit price
 
