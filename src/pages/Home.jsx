@@ -6,6 +6,12 @@ import { Sparkles, Gift } from 'lucide-react';
 export default function DiscoveryFeed() {
   const [suggestions, setSuggestions] = useState([]);
   const [userPrefs, setUserPrefs] = useState({ memberships: {}, payment: 'card' });
+  const [toast, setToast] = useState(null);
+
+  const handleBuy = (itemName) => {
+    setToast(`${itemName} 상품을 장바구니에 담았습니다! 🛒`);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   useEffect(() => {
     const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
@@ -67,13 +73,23 @@ export default function DiscoveryFeed() {
                 </div>
               )}
               
-              <button className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', borderRadius: 'var(--radius-md)', padding: '0.85rem' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => handleBuy(item.name)}
+                style={{ width: '100%', marginTop: '0.5rem', borderRadius: 'var(--radius-md)', padding: '0.85rem' }}
+              >
                 체감가로 구매하기
               </button>
             </div>
           );
         })}
       </div>
+
+      {toast && (
+        <div className="toast">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

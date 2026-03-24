@@ -3,7 +3,8 @@ import { Master_Product } from '../mockData/Master_DB';
 export function runNERPipeline(rawTitle) {
   // Simulates an Advanced NLP Name Entity Recognition pipeline mapping
   // text to { brand, name, capacity, qty }
-  
+  if (!rawTitle) return { entities: { brand: '기타/미상', name: '', size: '알수없음', qty: 1 }, matchedMasterId: null };
+
   let result = { brand: '기타/미상', name: rawTitle, size: '알수없음', qty: 1 };
   let bestMasterMatch = null;
   

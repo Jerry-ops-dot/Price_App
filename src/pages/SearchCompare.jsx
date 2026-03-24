@@ -11,6 +11,7 @@ export default function SearchCompare() {
   const [userPrefs, setUserPrefs] = useState({ memberships: {}, payment: 'card' });
   const [groupedResults, setGroupedResults] = useState([]);
   const [expandedMaster, setExpandedMaster] = useState(null);
+  const [isScanning, setIsScanning] = useState(null);
 
   useEffect(() => {
     const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
@@ -94,23 +95,27 @@ export default function SearchCompare() {
   };
 
   const handleVisualSearch = () => {
-    // Mocking an image upload that returns 'water bottle' directly matching Master DB
-    alert('📸 시각 검색 활성화: 빈 생수병을 인식했습니다!');
-    setSearchTerm('물병 사진 검색됨');
-    const match = searchByImage('water bottle');
-    if (match) {
-      computeAndGroupResults(Product_Raw_Data, userPrefs, match.master_id);
-    }
+    setIsScanning('image');
+    setTimeout(() => {
+      setIsScanning(null);
+      setSearchTerm('물병 사진 검색됨');
+      const match = searchByImage('water bottle');
+      if (match) {
+        computeAndGroupResults(Product_Raw_Data, userPrefs, match.master_id);
+      }
+    }, 1500);
   };
   
   const handleBarcodeSearch = () => {
-    // Mocking a barcode scan for Samdasoo Master Product
-    alert('📠 바코드 스캔: 8801234567890 인식 완료!');
-    setSearchTerm('바코드 8801234567890');
-    const match = scanBarcode('8801234567890');
-    if (match) {
-      computeAndGroupResults(Product_Raw_Data, userPrefs, match.master_id);
-    }
+    setIsScanning('barcode');
+    setTimeout(() => {
+      setIsScanning(null);
+      setSearchTerm('바코드 8801234567890');
+      const match = scanBarcode('8801234567890');
+      if (match) {
+        computeAndGroupResults(Product_Raw_Data, userPrefs, match.master_id);
+      }
+    }, 1500);
   };
 
   return (
@@ -202,6 +207,18 @@ export default function SearchCompare() {
           );
         })}
       </div>
+
+      {isScanning && (
+        <div className="scanning-overlay">
+          <div className="scanner-box">
+            <div className="scanner-line"></div>
+          </div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+            {isScanning === 'image' ? '📸 상품을 분석하고 있습니다...' : '📠 바코드를 인식 중입니다...'}
+          </h3>
+          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>잠시만 기다려주세요</p>
+        </div>
+      )}
     </div>
   );
 }
