@@ -74,9 +74,10 @@ export default function SearchCompare() {
         grouped[item.master_id].items.push(item);
       });
 
-      // 3. Sort items inside each group by unit price
+      // 3. Sort items inside each group by unit price and keep only top 5 cheapest
       Object.values(grouped).forEach(g => {
         g.items.sort((a, b) => a.sortPrice - b.sortPrice);
+        g.items = g.items.slice(0, 5);
       });
 
       let finalGroups = Object.values(grouped);
