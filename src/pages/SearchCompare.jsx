@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Camera, Search, Mic, ChevronDown, ChevronUp } from 'lucide-react';
-import { Master_Product, Product_Raw_Data, categoryStandards } from '../mockData/Master_DB';
 import { parseUnit, calculateStandardPrice } from '../utils/priceEngine';
 import { applyMembershipBenefits } from '../utils/membershipCalculator';
 import { runNERPipeline } from '../utils/nerEngine';
 import { searchByImage, scanBarcode } from '../utils/visualSearch';
+
+// We now only import categoryStandards, masters/deals come from API
+import { categoryStandards } from '../mockData/Master_DB';
 
 export default function SearchCompare() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,59 +21,77 @@ export default function SearchCompare() {
     const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
     if (prefs.memberships) setUserPrefs(prefs);
     
-    // initially load all products grouped by master
-    computeAndGroupResults(Product_Raw_Data, prefs, null);
+    // initially load all products from backend
+    fetchAndGroupResults('', null, prefs);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  const computeAndGroupResults = (rawData, prefs, targetMasterId) => {
-    // 1. Compute prices and unit prices for all raw data
-    const computed = rawData.map(product => {
-      const priceData = applyMembershipBenefits(product.rawPrice, product, prefs.memberships || {}, prefs.payment || 'card');
-      const finalPrice = priceData.calculatedPrice;
-      const { totalNum, unit } = parseUnit(product.name);
-      
-      let standardPriceObj = null;
-      let sortPrice = finalPrice; 
+  const fetchAndGroupResults = async (query = '', targetMasterId = null, currentPrefs = userPrefs) => {
+    setIsSearchingText(true);
+    // setGroupedResults([]); // Optional: keep old results until new arrive, but clearing feels snappy
 
-      if (totalNum && categoryStandards[product.category]) {
-        const stdUnit = categoryStandards[product.category].unit;
-        const val = calculateStandardPrice(finalPrice, totalNum, unit, stdUnit);
-        if (val) {
-          standardPriceObj = { value: val, unit: stdUnit };
-          sortPrice = val; 
+    try {
+      let url = '/api/search';
+      if (targetMasterId) {
+        url += `?master_id=${targetMasterId}`;
+      } else if (query) {
+        url += `?q=${encodeURIComponent(query)}`;
+      }
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('API Request Failed');
+      const { masters, deals } = await res.json();
+
+      // 1. Compute prices and unit prices for all raw data
+      const computed = deals.map(product => {
+        const priceData = applyMembershipBenefits(product.rawPrice, product, currentPrefs.memberships || {}, currentPrefs.payment || 'card');
+        const finalPrice = priceData.calculatedPrice;
+        const { totalNum, unit } = parseUnit(product.name);
+        
+        let standardPriceObj = null;
+        let sortPrice = finalPrice; 
+
+        if (totalNum && categoryStandards[product.category]) {
+          const stdUnit = categoryStandards[product.category].unit;
+          const val = calculateStandardPrice(finalPrice, totalNum, unit, stdUnit);
+          if (val) {
+            standardPriceObj = { value: val, unit: stdUnit };
+            sortPrice = val; 
+          }
         }
-      }
-      return { ...product, priceData, standardPriceObj, sortPrice };
-    });
-    
-    // 2. Group by master_id
-    const grouped = {};
-    computed.forEach(item => {
-      if (!grouped[item.master_id]) {
-        grouped[item.master_id] = {
-          masterInfo: Master_Product.find(m => m.master_id === item.master_id),
-          items: []
-        };
-      }
-      grouped[item.master_id].items.push(item);
-    });
+        return { ...product, priceData, standardPriceObj, sortPrice };
+      });
+      
+      // 2. Group by master_id
+      const grouped = {};
+      computed.forEach(item => {
+        if (!grouped[item.master_id]) {
+          grouped[item.master_id] = {
+            masterInfo: masters.find(m => m.master_id === item.master_id) || { master_id: item.master_id, product_name: 'Unknown', brand_name: '', thumbnail: '🎁' },
+            items: []
+          };
+        }
+        grouped[item.master_id].items.push(item);
+      });
 
-    // 3. Sort items inside each group by unit price
-    Object.values(grouped).forEach(g => {
-      g.items.sort((a, b) => a.sortPrice - b.sortPrice);
-    });
+      // 3. Sort items inside each group by unit price
+      Object.values(grouped).forEach(g => {
+        g.items.sort((a, b) => a.sortPrice - b.sortPrice);
+      });
 
-    let finalGroups = Object.values(grouped);
-    
-    // If targetMasterId provided (from NER/Vision), filter to just that master
-    if (targetMasterId) {
-      finalGroups = finalGroups.filter(g => g.masterInfo.master_id === targetMasterId);
-      if (finalGroups.length === 1) {
+      let finalGroups = Object.values(grouped);
+      
+      if (targetMasterId && finalGroups.length === 1) {
         setExpandedMaster(targetMasterId);
       }
-    }
 
-    setGroupedResults(finalGroups);
+      setGroupedResults(finalGroups);
+    } catch (e) {
+      console.error(e);
+      setGroupedResults([]);
+    } finally {
+      setIsSearchingText(false);
+    }
   };
 
   const handleTextSearch = (e) => {
@@ -81,7 +101,7 @@ export default function SearchCompare() {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     
     if (!val) {
-      computeAndGroupResults(Product_Raw_Data, userPrefs, null);
+      fetchAndGroupResults();
       setExpandedMaster(null);
       setIsSearchingText(false);
       return;
@@ -95,13 +115,10 @@ export default function SearchCompare() {
       const { matchedMasterId } = runNERPipeline(val);
       
       if (matchedMasterId) {
-        computeAndGroupResults(Product_Raw_Data, userPrefs, matchedMasterId);
+        fetchAndGroupResults('', matchedMasterId);
       } else {
-        // Fallback: regular string match on raw data
-        const filtered = Product_Raw_Data.filter(p => p.name.includes(val) || p.mall_name.includes(val));
-        computeAndGroupResults(filtered, userPrefs, null);
+        fetchAndGroupResults(val);
       }
-      setIsSearchingText(false);
     }, 500); // 500ms delay to simulate API search
   };
 
@@ -112,7 +129,7 @@ export default function SearchCompare() {
       setSearchTerm('물병 사진 검색됨');
       const match = searchByImage('water bottle');
       if (match) {
-        computeAndGroupResults(Product_Raw_Data, userPrefs, match.master_id);
+        fetchAndGroupResults('', match.master_id);
       }
     }, 1500);
   };
@@ -124,7 +141,7 @@ export default function SearchCompare() {
       setSearchTerm('바코드 8801234567890');
       const match = scanBarcode('8801234567890');
       if (match) {
-        computeAndGroupResults(Product_Raw_Data, userPrefs, match.master_id);
+        fetchAndGroupResults('', match.master_id);
       }
     }, 1500);
   };
