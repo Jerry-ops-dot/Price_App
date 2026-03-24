@@ -43,14 +43,17 @@ export async function onRequestGet(context) {
 
         // Parse Naver
         if (naverData && naverData.items) {
-          combinedDeals.push(...naverData.items.map((item, i) => ({
+          // Filter out Catalog (productType === '2') items because their prices are aggregate lowest (often bait-and-switch)
+          const validNaverItems = naverData.items.filter(item => item.productType !== '2' && item.mallName !== '네이버');
+          
+          combinedDeals.push(...validNaverItems.map((item, i) => ({
             id: `naver_${i}`,
             master_id: 'M_EXTERNAL', 
             mall_name: item.mallName,
             name: item.title.replace(/<[^>]*>?/g, ''), 
             rawPrice: parseInt(item.lprice, 10),
             isWow: item.mallName.includes('쿠팡'),
-            isNaverFresh: item.mallName.includes('네이버'),
+            isNaverFresh: false, // filtered out Naver catalog so it's irrelevant
             hasShinsegaeCoupon: item.mallName.includes('SSG') || item.mallName.includes('이마트'),
             category: 'external',
             link: item.link,
