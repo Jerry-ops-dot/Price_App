@@ -14,13 +14,13 @@ export function parseUnit(name) {
   let totalNum = null;
   let unit = null;
 
-  // 1. 단위를 포함한 상세 정규식 (박스, 묶음, 포, 구 등 한국어 포장 단위 대폭 확대)
-  const match = name.match(/([0-9.]+)\s*(L|ml|g|kg|m(?:m)?)\s*(?:x?\s*([0-9]+)\s*(?:개|롤|입|병|캔|팩|묶음|포|구|박스))?/i);
+  // 1. 단위를 포함한 상세 정규식 (생수 특화 '펫/페트' 추가, x가 있을 때는 뒤에 '개'가 없어도 수량 인식)
+  const match = name.match(/([0-9.]+)\s*(L|ml|g|kg|m(?:m)?)\s*(?:(?:x|X|\*)\s*([0-9]+)\s*(?:개|롤|입|병|캔|팩|묶음|포|구|박스|페트|펫)?|\s+([0-9]+)\s*(?:개|롤|입|병|캔|팩|묶음|포|구|박스|페트|펫))/i);
   
   if (match) {
     let amount = parseFloat(match[1]);
     const rawUnit = match[2].toLowerCase();
-    const count = match[3] ? parseInt(match[3], 10) : 1;
+    const count = parseInt(match[3] || match[4] || 1, 10);
 
     if (rawUnit === 'l') { amount *= 1000; unit = 'ml'; }
     else if (rawUnit === 'kg') { amount *= 1000; unit = 'g'; }
@@ -30,8 +30,8 @@ export function parseUnit(name) {
     return { totalNum, unit };
   }
 
-  // 2. 수량만 표기된 경우 파싱 ("사과 10개", "콜라 30캔")
-  const countMatch = name.match(/([0-9]+)\s*(?:개|입|병|캔|팩|롤|묶음|포|구|박스)/i);
+  // 2. 수량만 표기된 경우 파싱 ("사과 10개", "콜라 30캔", "탐사수 6펫")
+  const countMatch = name.match(/([0-9]+)\s*(?:개|입|병|캔|팩|롤|묶음|포|구|박스|페트|펫)/i);
   let parsedCount = countMatch ? parseInt(countMatch[1], 10) : 1;
 
   // 3. 마스터 사전 참조 로직 (상품명에 키워드가 포함되어 있고 용량 기재가 없는 경우)
