@@ -75,7 +75,7 @@ export default function SearchCompare() {
             grouped[item.master_id].masterInfo.thumbnail = customThumbnail;
           }
           grouped[item.master_id].masterInfo.product_name = query;
-          grouped[item.master_id].masterInfo.brand_name = '최저가 비교 결과 ✅';
+          grouped[item.master_id].masterInfo.brand_name = '최저가 비교 결과';
         }
         grouped[item.master_id].items.push(item);
       });
@@ -192,7 +192,7 @@ export default function SearchCompare() {
 
   return (
     <div className="page-content animate-fade-in" style={{ paddingBottom: '6rem' }}>
-      <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1rem' }}>정밀 비교/검색 🎯</h1>
+      <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1.2rem', color: 'var(--text-main)' }}>가격 비교 검색</h1>
       
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
         <div style={{ flex: 1, position: 'relative' }}>
@@ -216,41 +216,41 @@ export default function SearchCompare() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {/* Step 1: Loading Product List */}
         {isSearchingText && searchStep === 'select_product' && (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '1rem', animation: 'spin 2s linear infinite' }}>🔄</div>
-            <div>네이버 쇼핑 제품 목록을 불러오는 중입니다...</div>
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '1.5rem', marginBottom: '1rem', animation: 'spin 2s linear infinite' }}>↻</div>
+            <div style={{ fontSize: '0.9rem' }}>제품 목록을 불러오는 중입니다...</div>
           </div>
         )}
 
         {/* Step 2: Product Candidates UI */}
         {!isSearchingText && searchStep === 'select_product' && productCandidates.length > 0 && (
           <div style={{ marginTop: '0.5rem', paddingBottom: '2rem' }}>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>정확하게 어떤 제품을 찾으시나요? 👇</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>검색된 제품 목록</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               {productCandidates.map((product, idx) => (
                 <div 
                   key={`cand_${idx}`} 
                   onClick={() => handleSelectProduct(product)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'var(--surface-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', transition: 'transform 0.2s' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'var(--surface-color)', borderRadius: '12px', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 6px rgba(0,0,0,0.03)', transition: 'transform 0.15s ease' }}
                 >
-                  <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src={product.image || 'https://via.placeholder.com/60'} alt="product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.04)' }}>
+                    <img src={product.image || 'https://via.placeholder.com/64'} alt="product" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.3' }}>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.4' }}>
                       {product.name}
                     </div>
-                    <div style={{ marginTop: '0.4rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                    <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
                         {product.rawPrice.toLocaleString()}원
-                      </div>
+                      </span>
                       {product.standardPriceObj && (
-                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)' }}>
-                           ({product.standardPriceObj.value}원 <span style={{fontWeight:400, color:'var(--text-muted)'}}>/{product.standardPriceObj.unit}</span>)
-                        </div>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--secondary)', backgroundColor: 'var(--bg-color)', padding: '0.1rem 0.4rem', borderRadius: '4px' }}>
+                           {product.standardPriceObj.unit}당 {product.standardPriceObj.value}원
+                        </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.4rem', fontWeight: 600 }}>👈 클릭하여 판매처별 최저가 비교</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 600 }}>판매처 비교하기 ></div>
                   </div>
                 </div>
               ))}
@@ -260,15 +260,15 @@ export default function SearchCompare() {
 
         {/* Loading Prices State */}
         {isSearchingText && searchStep === 'view_deals' && (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '1rem', animation: 'spin 2s linear infinite' }}>🔄</div>
-            <div>선택하신 제품의 쇼핑몰별 최저가를 분석 중입니다...</div>
+          <div style={{ textAlign: 'center', padding: '4rem 0', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '1.5rem', marginBottom: '1rem', animation: 'spin 2s linear infinite' }}>↻</div>
+            <div style={{ fontSize: '0.9rem' }}>실시간 최저가를 분석 중입니다...</div>
           </div>
         )}
 
         {/* Empty State */}
         {!isSearchingText && searchStep === 'select_product' && productCandidates.length === 0 && searchTerm && (
-          <div style={{textAlign:'center', padding:'2rem', color:'var(--text-muted)'}}>검색 결과가 없습니다.</div>
+          <div style={{textAlign:'center', padding:'3rem', color:'var(--text-muted)', fontSize: '0.9rem'}}>검색 결과가 없습니다.</div>
         )}
 
         {/* Step 3: View Deals (Grouped Results) */}
@@ -276,9 +276,9 @@ export default function SearchCompare() {
           <div style={{ marginBottom: '1rem' }}>
             <button 
               onClick={() => { setSearchStep('select_product'); setGroupedResults([]); setSearchTerm(''); fetchProductCandidates(''); }} 
-              style={{ padding: '0.6rem 1.2rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '30px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', boxShadow: '0 4px 10px rgba(74, 110, 224, 0.3)' }}
+              style={{ padding: '0.5rem 1rem', background: '#f5f5f5', color: 'var(--text-main)', border: '1px solid #ddd', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
             >
-              ← 다른 제품 다시 찾기
+              ← 이전으로
             </button>
           </div>
         )}
@@ -288,62 +288,61 @@ export default function SearchCompare() {
           const bestDeal = group.items[0]; // Already sorted by unit price
 
           return (
-            <div key={group.masterInfo.master_id} className="glass-panel" style={{ overflow: 'hidden' }}>
+            <div key={group.masterInfo.master_id} className="glass-panel" style={{ overflow: 'hidden', padding: 0 }}>
               {/* Master Product Header */}
               <div 
                 onClick={() => setExpandedMaster(isExpanded ? null : group.masterInfo.master_id)}
-                style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', background: 'var(--surface-color)', position: 'relative' }}
+                style={{ padding: '1.2rem', display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', background: 'var(--surface-color)', position: 'relative' }}
               >
-                <div style={{ fontSize: '2.5rem', minWidth: '60px', width: '60px', height: '60px', textAlign: 'center', background: 'var(--bg-color)', borderRadius: 'var(--radius-md)', padding: typeof group.masterInfo.thumbnail === 'string' && group.masterInfo.thumbnail.startsWith('http') ? '0' : '0.5rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ minWidth: '64px', width: '64px', height: '64px', textAlign: 'center', background: '#fff', borderRadius: '8px', padding: typeof group.masterInfo.thumbnail === 'string' && group.masterInfo.thumbnail.startsWith('http') ? '0' : '0.5rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,0,0,0.04)' }}>
                   {typeof group.masterInfo.thumbnail === 'string' && group.masterInfo.thumbnail.startsWith('http') ? (
-                    <img src={group.masterInfo.thumbnail} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={group.masterInfo.thumbnail} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   ) : (
-                    group.masterInfo.thumbnail
+                    <span style={{ fontSize: '2rem' }}>{group.masterInfo.thumbnail}</span>
                   )}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, marginBottom: '0.2rem' }}>{group.masterInfo.brand_name}</div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>{group.masterInfo.product_name} <span style={{fontSize:'0.9rem', color:'var(--text-muted)'}}>{group.masterInfo.standard_capacity}</span></div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 700, marginBottom: '0.3rem' }}>{group.masterInfo.brand_name}</div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', lineHeight: '1.3' }}>
+                    {group.masterInfo.product_name} <span style={{fontSize:'0.85rem', color:'var(--text-muted)', fontWeight: 400}}>{group.masterInfo.standard_capacity}</span>
+                  </div>
                   
-                  <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  <div style={{ marginTop: '0.6rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                     최저 체감가: <span style={{ fontWeight: 800, color: 'var(--secondary)' }}>{bestDeal.standardPriceObj?.value}원</span> /{bestDeal.standardPriceObj?.unit}
                   </div>
-                </div>
-                <div>
-                  {isExpanded ? <ChevronUp size={24} color="var(--text-muted)" /> : <ChevronDown size={24} color="var(--text-muted)" />}
                 </div>
               </div>
 
               {/* Collapsed Items List */}
               {isExpanded && (
-                <div style={{ background: 'var(--bg-color)', padding: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.2rem' }}>판매처별 체감가 비교 (단위당 가격순)</div>
+                <div style={{ background: 'var(--bg-color)', padding: '1rem', borderTop: '1px solid rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.2rem' }}>판매처별 체감가 비교</div>
                   
                   {group.items.map((item, i) => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem', background: 'var(--surface-color)', borderRadius: 'var(--radius-sm)', border: i === 0 ? '1px solid var(--secondary)' : '1px solid transparent', boxShadow: 'var(--shadow-sm)', position: 'relative' }}>
-                      {i === 0 && <div style={{ position: 'absolute', top: '-8px', left: '-8px', background: 'var(--secondary)', color: 'white', fontSize: '0.65rem', fontWeight: 800, padding: '0.1rem 0.4rem', borderRadius: '4px' }}>최저가</div>}
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem', background: 'var(--surface-color)', borderRadius: '8px', border: i === 0 ? '1px solid rgba(0, 190, 130, 0.4)' : '1px solid rgba(0,0,0,0.03)', boxShadow: '0 2px 4px rgba(0,0,0,0.01)', position: 'relative' }}>
+                      {i === 0 && <div style={{ position: 'absolute', top: '-9px', left: '-1px', background: 'var(--secondary)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.4rem', borderRadius: '4px' }}>최저가</div>}
                       
                       <div style={{ flex: 1, paddingRight: '1rem' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 800, marginBottom: '0.2rem', color: 'var(--text-main)' }}>{item.mall_name}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.2rem', color: 'var(--text-main)' }}>{item.mall_name}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '170px' }}>{item.name}</div>
                         
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem' }}>
                           {item.priceData.benefitsApplied.map((b, _idx) => (
-                            <span key={_idx} style={{ fontSize: '0.6rem', color: b.color, background: 'var(--surface-color)', padding: '0.1rem 0.3rem', borderRadius: '2px', border: `1px solid ${b.color}40`, fontWeight: 600 }}>{b.text}</span>
+                            <span key={_idx} style={{ fontSize: '0.65rem', color: b.color, background: 'var(--surface-color)', padding: '0.1rem 0.3rem', borderRadius: '4px', border: `1px solid ${b.color}30`, fontWeight: 600 }}>{b.text}</span>
                           ))}
                         </div>
                       </div>
 
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-main)' }}>{item.priceData.calculatedPrice.toLocaleString()}<span style={{fontSize:'0.8rem'}}>원</span></div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>{item.priceData.calculatedPrice.toLocaleString()}<span style={{fontSize:'0.8rem', fontWeight: 500}}>원</span></div>
                         {item.standardPriceObj && (
-                          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary)', marginTop: '0.2rem' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)', marginTop: '0.2rem' }}>
                             {item.standardPriceObj.value}원 <span style={{fontWeight:400, color:'var(--text-muted)'}}>/{item.standardPriceObj.unit}</span>
                           </div>
                         )}
                         {item.link && (
                           <div style={{ marginTop: '0.5rem' }}>
-                            <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'underline', fontWeight: 600 }}>쇼핑몰 이동 🚀</a>
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.75rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>쇼핑몰 이동 &gt;</a>
                           </div>
                         )}
                       </div>
