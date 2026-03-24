@@ -250,7 +250,7 @@ export default function SearchCompare() {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 600 }}>판매처 비교하기 ></div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.5rem', fontWeight: 600 }}>판매처 비교하기 &gt;</div>
                   </div>
                 </div>
               ))}
