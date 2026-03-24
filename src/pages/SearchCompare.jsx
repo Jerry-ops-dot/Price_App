@@ -15,18 +15,19 @@ export default function SearchCompare() {
   const [expandedMaster, setExpandedMaster] = useState(null);
   const [isScanning, setIsScanning] = useState(null);
   const [isSearchingText, setIsSearchingText] = useState(false);
+  const [searchStep, setSearchStep] = useState('input'); // 'input', 'select_product', 'view_deals'
+  const [productCandidates, setProductCandidates] = useState([]);
   const debounceTimer = useRef(null);
 
   useEffect(() => {
     const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
     if (prefs.memberships) setUserPrefs(prefs);
     
-    // initially load all products from backend
-    fetchAndGroupResults('', null, prefs);
+    // Wait for user input to show product candidates
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  const fetchAndGroupResults = async (query = '', targetMasterId = null, currentPrefs = userPrefs) => {
+  const fetchAndGroupResults = async (query = '', targetMasterId = null, currentPrefs = userPrefs, customThumbnail = null) => {
     setIsSearchingText(true);
     // setGroupedResults([]); // Optional: keep old results until new arrive, but clearing feels snappy
 
@@ -70,6 +71,11 @@ export default function SearchCompare() {
             masterInfo: masters.find(m => m.master_id === item.master_id) || { master_id: item.master_id, product_name: 'Unknown', brand_name: '', thumbnail: '🎁' },
             items: []
           };
+          if (customThumbnail) {
+            grouped[item.master_id].masterInfo.thumbnail = customThumbnail;
+          }
+          grouped[item.master_id].masterInfo.product_name = query;
+          grouped[item.master_id].masterInfo.brand_name = '최저가 비교 결과 ✅';
         }
         grouped[item.master_id].items.push(item);
       });
@@ -95,32 +101,58 @@ export default function SearchCompare() {
     }
   };
 
+  const fetchProductCandidates = async (query) => {
+    setIsSearchingText(true);
+    setSearchStep('select_product');
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (!res.ok) throw new Error('API Request Failed');
+      const { deals } = await res.json();
+      
+      const uniqueDeals = [];
+      const titles = new Set();
+      for (const d of deals) {
+        if (!titles.has(d.name)) {
+          uniqueDeals.push(d);
+          titles.add(d.name);
+        }
+      }
+      setProductCandidates(uniqueDeals.slice(0, 10)); // Top 10 unique products
+    } catch (e) {
+      console.error(e);
+      setProductCandidates([]);
+    } finally {
+      setIsSearchingText(false);
+    }
+  };
+
+  const handleSelectProduct = (product) => {
+    setSearchStep('view_deals');
+    setSearchTerm(product.name);
+    // Search absolute deals for this exact product title
+    fetchAndGroupResults(product.name, null, userPrefs, product.image);
+  };
+
   const handleTextSearch = (e) => {
     const val = e.target.value;
     setSearchTerm(val);
-    
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     
     if (!val) {
-      fetchAndGroupResults();
-      setExpandedMaster(null);
+      setSearchStep('input');
+      setProductCandidates([]);
       setIsSearchingText(false);
+      setGroupedResults([]);
       return;
     }
     
     setIsSearchingText(true);
-    setGroupedResults([]); // clear results for "loading" effect
+    setSearchStep('select_product');
+    setProductCandidates([]);
 
     debounceTimer.current = setTimeout(() => {
-      // Run NER NLP Pipeline
-      const { matchedMasterId } = runNERPipeline(val);
-      
-      if (matchedMasterId) {
-        fetchAndGroupResults('', matchedMasterId);
-      } else {
-        fetchAndGroupResults(val);
-      }
-    }, 500); // 500ms delay to simulate API search
+      fetchProductCandidates(val);
+    }, 500); // 500ms debounce
   };
 
   const handleVisualSearch = () => {
@@ -171,14 +203,66 @@ export default function SearchCompare() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-        {isSearchingText && (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--primary)', fontWeight: 700 }}>
-            결과를 분석 중입니다... 🔄
+        {/* Step 1: Loading Product List */}
+        {isSearchingText && searchStep === 'select_product' && (
+          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '1rem', animation: 'spin 2s linear infinite' }}>🔄</div>
+            <div>네이버 쇼핑 제품 목록을 불러오는 중입니다...</div>
           </div>
         )}
-        {!isSearchingText && groupedResults.length === 0 && <div style={{textAlign:'center', padding:'2rem', color:'var(--text-muted)'}}>검색 결과가 없습니다.</div>}
+
+        {/* Step 2: Product Candidates UI */}
+        {!isSearchingText && searchStep === 'select_product' && productCandidates.length > 0 && (
+          <div style={{ marginTop: '0.5rem', paddingBottom: '2rem' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>정확하게 어떤 제품을 찾으시나요? 👇</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+              {productCandidates.map((product, idx) => (
+                <div 
+                  key={`cand_${idx}`} 
+                  onClick={() => handleSelectProduct(product)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', background: 'var(--surface-color)', borderRadius: 'var(--radius-md)', cursor: 'pointer', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', transition: 'transform 0.2s' }}
+                >
+                  <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', flexShrink: 0, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src={product.image || 'https://via.placeholder.com/60'} alt="product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.3' }}>
+                      {product.name}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.4rem', fontWeight: 600 }}>👈 클릭하여 판매처별 최저가 비교</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Loading Prices State */}
+        {isSearchingText && searchStep === 'view_deals' && (
+          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '1rem', animation: 'spin 2s linear infinite' }}>🔄</div>
+            <div>선택하신 제품의 쇼핑몰별 최저가를 분석 중입니다...</div>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isSearchingText && searchStep === 'select_product' && productCandidates.length === 0 && searchTerm && (
+          <div style={{textAlign:'center', padding:'2rem', color:'var(--text-muted)'}}>검색 결과가 없습니다.</div>
+        )}
+
+        {/* Step 3: View Deals (Grouped Results) */}
+        {!isSearchingText && searchStep === 'view_deals' && groupedResults.length > 0 && (
+          <div style={{ marginBottom: '1rem' }}>
+            <button 
+              onClick={() => { setSearchStep('select_product'); setGroupedResults([]); setSearchTerm(''); fetchProductCandidates(''); }} 
+              style={{ padding: '0.6rem 1.2rem', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '30px', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', boxShadow: '0 4px 10px rgba(74, 110, 224, 0.3)' }}
+            >
+              ← 다른 제품 다시 찾기
+            </button>
+          </div>
+        )}
         
-        {!isSearchingText && groupedResults.map((group, idx) => {
+        {!isSearchingText && searchStep === 'view_deals' && groupedResults.map((group, idx) => {
           const isExpanded = expandedMaster === group.masterInfo.master_id || groupedResults.length === 1;
           const bestDeal = group.items[0]; // Already sorted by unit price
 
