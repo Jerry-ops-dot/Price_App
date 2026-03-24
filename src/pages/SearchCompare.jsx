@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Camera, Search, Mic, ChevronDown, ChevronUp } from 'lucide-react';
 import { parseUnit, calculateStandardPrice } from '../utils/priceEngine';
 import { applyMembershipBenefits } from '../utils/membershipCalculator';
@@ -9,6 +10,7 @@ import { searchByImage, scanBarcode } from '../utils/visualSearch';
 import { categoryStandards } from '../mockData/Master_DB';
 
 export default function SearchCompare() {
+  const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [userPrefs, setUserPrefs] = useState({ memberships: {}, payment: 'card' });
   const [groupedResults, setGroupedResults] = useState([]);
@@ -23,9 +25,14 @@ export default function SearchCompare() {
     const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
     if (prefs.memberships) setUserPrefs(prefs);
     
-    // Wait for user input to show product candidates
+    const searchParams = new URLSearchParams(location.search);
+    const urlQuery = searchParams.get('q');
+    if (urlQuery) {
+      setSearchTerm(urlQuery);
+      fetchProductCandidates(urlQuery);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [location.search]);
   
   const fetchAndGroupResults = async (query = '', targetMasterId = null, currentPrefs = userPrefs, customThumbnail = null) => {
     setIsSearchingText(true);
@@ -140,6 +147,14 @@ export default function SearchCompare() {
   const handleSelectProduct = (product) => {
     setSearchStep('view_deals');
     setSearchTerm(product.name);
+    
+    // Log search history without awaiting
+    fetch('/api/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: product.name, thumbnail: product.image })
+    }).catch(console.error);
+
     // Search absolute deals for this exact product title
     fetchAndGroupResults(product.name, null, userPrefs, product.image);
   };

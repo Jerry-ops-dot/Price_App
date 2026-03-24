@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS search_history;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS deals;
 DROP TABLE IF EXISTS masters;
 
@@ -22,6 +25,29 @@ CREATE TABLE deals (
   hasShinsegaeCoupon BOOLEAN,
   category TEXT,
   FOREIGN KEY(master_id) REFERENCES masters(master_id)
+);
+
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  username TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sessions (
+  token TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  expires_at DATETIME NOT NULL,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE search_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id TEXT NOT NULL,
+  search_query TEXT NOT NULL,
+  thumbnail TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 INSERT INTO masters (master_id, brand_name, product_name, standard_capacity, barcode_number, thumbnail, category) VALUES
