@@ -188,8 +188,12 @@ export default function SearchCompare() {
                 onClick={() => setExpandedMaster(isExpanded ? null : group.masterInfo.master_id)}
                 style={{ padding: '1.25rem', display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer', background: 'var(--surface-color)', position: 'relative' }}
               >
-                <div style={{ fontSize: '2.5rem', minWidth: '60px', textAlign: 'center', background: 'var(--bg-color)', borderRadius: 'var(--radius-md)', padding: '0.5rem' }}>
-                  {group.masterInfo.thumbnail}
+                <div style={{ fontSize: '2.5rem', minWidth: '60px', width: '60px', height: '60px', textAlign: 'center', background: 'var(--bg-color)', borderRadius: 'var(--radius-md)', padding: typeof group.masterInfo.thumbnail === 'string' && group.masterInfo.thumbnail.startsWith('http') ? '0' : '0.5rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {typeof group.masterInfo.thumbnail === 'string' && group.masterInfo.thumbnail.startsWith('http') ? (
+                    <img src={group.masterInfo.thumbnail} alt="thumb" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    group.masterInfo.thumbnail
+                  )}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 800, marginBottom: '0.2rem' }}>{group.masterInfo.brand_name}</div>
@@ -229,6 +233,11 @@ export default function SearchCompare() {
                         {item.standardPriceObj && (
                           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary)', marginTop: '0.2rem' }}>
                             {item.standardPriceObj.value}원 <span style={{fontWeight:400, color:'var(--text-muted)'}}>/{item.standardPriceObj.unit}</span>
+                          </div>
+                        )}
+                        {item.link && (
+                          <div style={{ marginTop: '0.5rem' }}>
+                            <a href={item.link} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'underline', fontWeight: 600 }}>쇼핑몰 이동 🚀</a>
                           </div>
                         )}
                       </div>

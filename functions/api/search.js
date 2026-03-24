@@ -3,12 +3,64 @@ export async function onRequestGet(context) {
   const query = url.searchParams.get('q');
   const masterId = url.searchParams.get('master_id');
 
+  const clientId = context.env.NAVER_CLIENT_ID;
+  const clientSecret = context.env.NAVER_CLIENT_SECRET;
+
   try {
     const db = context.env.DB;
-    // 1. Fetch Master Data
+    // 1. Fetch Local Master Data
     const mastersData = await db.prepare("SELECT * FROM masters").all();
     
-    // 2. Fetch Deals based on query or master_id
+    // 2. Fetch Deals: Try Naver API FIRST if searching by text
+    if (query && clientId && clientSecret) {
+      try {
+        const naverRes = await fetch(`https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(query)}&display=20`, {
+          headers: {
+            'X-Naver-Client-Id': clientId,
+            'X-Naver-Client-Secret': clientSecret
+          }
+        });
+        
+        if (naverRes.ok) {
+          const naverData = await naverRes.json();
+          if (naverData.items.length > 0) {
+            // Transform Naver Data into PickPrice Deals structure
+            const deals = naverData.items.map((item, index) => ({
+              id: `naver_${index}`,
+              master_id: 'M_EXTERNAL', 
+              mall_name: item.mallName,
+              name: item.title.replace(/<[^>]*>?/g, ''), // Strip <b> HTML tags
+              rawPrice: parseInt(item.lprice, 10),
+              isWow: item.mallName.includes('쿠팡'), // Mock logic
+              isNaverFresh: item.mallName.includes('네이버'),
+              hasShinsegaeCoupon: item.mallName.includes('SSG') || item.mallName.includes('이마트'),
+              category: 'external',
+              link: item.link,
+              image: item.image
+            }));
+            
+            const activeMaster = {
+              master_id: 'M_EXTERNAL',
+              brand_name: '네이버 쇼핑 실시간',
+              product_name: `검색어: ${query}`,
+              standard_capacity: '',
+              barcode_number: '',
+              thumbnail: deals[0].image || '🌐',
+              category: 'external'
+            };
+            
+            return Response.json({
+              masters: [...mastersData.results, activeMaster],
+              deals: deals
+            });
+          }
+        }
+      } catch(err) {
+        console.error("Naver API failed, falling back to local DB.", err);
+      }
+    }
+    
+    // 3. Fallback to Local D1 database query
     let dealsData;
     if (masterId) {
        dealsData = await db.prepare("SELECT * FROM deals WHERE master_id = ?").bind(masterId).all();
@@ -20,7 +72,6 @@ export async function onRequestGet(context) {
       dealsData = await db.prepare("SELECT * FROM deals").all();
     }
     
-    // 3. Transform SQLite booleans (0/1) to true/false for the frontend
     const deals = dealsData.results.map(d => ({
       ...d,
       isWow: Boolean(d.isWow),
