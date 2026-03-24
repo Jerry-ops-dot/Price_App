@@ -24,22 +24,23 @@ export async function onRequestGet(context) {
         if (naverRes.ok) {
           const naverData = await naverRes.json();
           if (naverData.items.length > 0) {
-            // Filter out Catalog (productType === '2') items because their prices are aggregate lowest (often bait-and-switch)
-            const validNaverItems = naverData.items.filter(item => item.productType !== '2' && item.mallName !== '네이버');
-            
-            const deals = validNaverItems.map((item, index) => ({
-              id: `naver_${index}`,
-              master_id: 'M_EXTERNAL', 
-              mall_name: item.mallName,
-              name: item.title.replace(/<[^>]*>?/g, ''), 
-              rawPrice: parseInt(item.lprice, 10),
-              isWow: item.mallName.includes('쿠팡'), 
-              isNaverFresh: false, 
-              hasShinsegaeCoupon: item.mallName.includes('SSG') || item.mallName.includes('이마트'),
-              category: 'external',
-              link: item.link,
-              image: item.image
-            }));
+            const deals = naverData.items.map((item, index) => {
+              const catalogFlag = item.productType === '2' || item.mallName === '네이버';
+              return {
+                id: `naver_${index}`,
+                master_id: 'M_EXTERNAL', 
+                mall_name: catalogFlag ? '네이버 가격비교' : item.mallName,
+                name: item.title.replace(/<[^>]*>?/g, ''), 
+                rawPrice: parseInt(item.lprice, 10),
+                isWow: item.mallName.includes('쿠팡'), 
+                isNaverFresh: item.mallName.includes('네이버'), 
+                hasShinsegaeCoupon: item.mallName.includes('SSG') || item.mallName.includes('이마트'),
+                category: 'external',
+                link: item.link,
+                image: item.image,
+                isCatalog: catalogFlag
+              };
+            });
             
             if (deals.length > 0) {
               const activeMaster = {
@@ -80,7 +81,8 @@ export async function onRequestGet(context) {
       ...d,
       isWow: Boolean(d.isWow),
       isNaverFresh: Boolean(d.isNaverFresh),
-      hasShinsegaeCoupon: Boolean(d.hasShinsegaeCoupon)
+      hasShinsegaeCoupon: Boolean(d.hasShinsegaeCoupon),
+      isCatalog: false
     }));
     
     return Response.json({
