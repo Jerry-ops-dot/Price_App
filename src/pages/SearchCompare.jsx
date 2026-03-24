@@ -113,6 +113,17 @@ export default function SearchCompare() {
       const titles = new Set();
       for (const d of deals) {
         if (!titles.has(d.name)) {
+          const { totalNum, unit } = parseUnit(d.name);
+          let stdUnit = '100g';
+          if (unit && (unit.toLowerCase() === 'l' || unit.toLowerCase() === 'ml')) stdUnit = '100ml';
+          else if (unit === '개' || unit === '입' || unit === '봉') stdUnit = '1개';
+          else if (unit === 'm' || unit === '롤') stdUnit = '10m';
+
+          const val = calculateStandardPrice(d.rawPrice, totalNum, unit, stdUnit);
+          if (val) {
+            d.standardPriceObj = { value: val, unit: stdUnit };
+          }
+
           uniqueDeals.push(d);
           titles.add(d.name);
         }
@@ -229,7 +240,17 @@ export default function SearchCompare() {
                     <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: '1.3' }}>
                       {product.name}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--primary)', marginTop: '0.4rem', fontWeight: 600 }}>👈 클릭하여 판매처별 최저가 비교</div>
+                    <div style={{ marginTop: '0.4rem', display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-main)' }}>
+                        {product.rawPrice.toLocaleString()}원
+                      </div>
+                      {product.standardPriceObj && (
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary)' }}>
+                           ({product.standardPriceObj.value}원 <span style={{fontWeight:400, color:'var(--text-muted)'}}>/{product.standardPriceObj.unit}</span>)
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.4rem', fontWeight: 600 }}>👈 클릭하여 판매처별 최저가 비교</div>
                   </div>
                 </div>
               ))}
