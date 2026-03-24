@@ -338,7 +338,18 @@ export default function SearchCompare() {
                       {i === 0 && <div style={{ position: 'absolute', top: '-9px', left: '-1px', background: 'var(--secondary)', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '0.15rem 0.4rem', borderRadius: '4px' }}>최저가</div>}
                       
                       <div style={{ flex: 1, paddingRight: '1rem' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '0.2rem', color: 'var(--text-main)' }}>{item.mall_name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>{item.mall_name}</span>
+                          {item.searchSource === 'naver' && (
+                            <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', background: 'var(--naver)', color: 'white', borderRadius: '4px', fontWeight: 800 }}>Naver</span>
+                          )}
+                          {item.searchSource === 'google' && (
+                            <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', background: '#EA4335', color: 'white', borderRadius: '4px', fontWeight: 800 }}>Google</span>
+                          )}
+                          {item.isWow && <span style={{ fontSize: '0.7rem', color: 'var(--coupang)', fontWeight: 800 }}>로켓</span>}
+                          {item.isNaverFresh && <span style={{ fontSize: '0.7rem', color: 'var(--naver)', fontWeight: 800 }}>도착보장</span>}
+                          {item.hasShinsegaeCoupon && <span style={{ fontSize: '0.7rem', color: '#ffb300', fontWeight: 800 }}>특가</span>}
+                        </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '170px' }}>{item.name}</div>
                         
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem' }}>
