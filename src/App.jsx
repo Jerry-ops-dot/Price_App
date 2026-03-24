@@ -33,7 +33,7 @@ const Header = () => (
   <header className="header">
     <div className="brand">
       <Sparkles size={20} style={{ color: "var(--primary)" }} />
-       PickPrice
+       Jerry's Price
     </div>
   </header>
 );

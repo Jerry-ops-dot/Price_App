@@ -28,10 +28,6 @@ export default function DiscoveryFeed() {
           <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.25rem' }}>맞춤 발견 🔮</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>AI가 분석한 체감 최저가 딜</p>
         </div>
-        <div className="glass-panel" style={{ padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-pill)', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', border: '1px solid var(--primary)', background: 'rgba(74, 110, 224, 0.05)' }}>
-          <Gift size={16} style={{ color: 'var(--primary)' }} />
-          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)' }}>출석 3일차!</span>
-        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
