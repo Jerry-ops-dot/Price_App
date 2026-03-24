@@ -5,105 +5,62 @@ export async function onRequestGet(context) {
 
   const clientId = context.env.NAVER_CLIENT_ID;
   const clientSecret = context.env.NAVER_CLIENT_SECRET;
-  const serpapiKey = context.env.SERPAPI_KEY;
 
   try {
     const db = context.env.DB;
     // 1. Fetch Local Master Data
     const mastersData = await db.prepare("SELECT * FROM masters").all();
     
-    // 2. Fetch Deals: Try External APIs FIRST if searching by text
-    if (query && (clientId || serpapiKey)) {
+    // 2. Fetch Deals: Try Naver API FIRST if searching by text
+    if (query && clientId && clientSecret) {
       try {
-        const fetchPromises = [];
+        const naverRes = await fetch(`https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(query)}&display=20`, {
+          headers: {
+            'X-Naver-Client-Id': clientId,
+            'X-Naver-Client-Secret': clientSecret
+          }
+        });
         
-        // Queue Naver
-        if (clientId && clientSecret) {
-          fetchPromises.push(
-            fetch(`https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(query)}&display=15`, {
-              headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret }
-            }).then(r => r.json()).catch(() => null)
-          );
-        } else {
-          fetchPromises.push(Promise.resolve(null));
-        }
-
-        // Queue SerpApi (Google Shopping)
-        if (serpapiKey) {
-          fetchPromises.push(
-            fetch(`https://serpapi.com/search.json?engine=google_shopping&q=${encodeURIComponent(query)}&api_key=${serpapiKey}&gl=kr&hl=ko`)
-            .then(r => r.json()).catch(() => null)
-          );
-        } else {
-          fetchPromises.push(Promise.resolve(null));
-        }
-
-        const [naverData, googleData] = await Promise.all(fetchPromises);
-        let combinedDeals = [];
-
-        // Parse Naver
-        if (naverData && naverData.items) {
-          // Filter out Catalog (productType === '2') items because their prices are aggregate lowest (often bait-and-switch)
-          const validNaverItems = naverData.items.filter(item => item.productType !== '2' && item.mallName !== '네이버');
-          
-          combinedDeals.push(...validNaverItems.map((item, i) => ({
-            id: `naver_${i}`,
-            master_id: 'M_EXTERNAL', 
-            mall_name: item.mallName,
-            name: item.title.replace(/<[^>]*>?/g, ''), 
-            rawPrice: parseInt(item.lprice, 10),
-            isWow: item.mallName.includes('쿠팡'),
-            isNaverFresh: false, // filtered out Naver catalog so it's irrelevant
-            hasShinsegaeCoupon: item.mallName.includes('SSG') || item.mallName.includes('이마트'),
-            category: 'external',
-            link: item.link,
-            image: item.image,
-            searchSource: 'naver'
-          })));
-        }
-
-        // Parse Google
-        if (googleData && googleData.shopping_results) {
-          combinedDeals.push(...googleData.shopping_results.map((item, i) => {
-             const price = item.extracted_price || parseInt(String(item.price).replace(/[^0-9]/g, ''), 10) || 0;
-             return {
-              id: `google_${i}`,
+        if (naverRes.ok) {
+          const naverData = await naverRes.json();
+          if (naverData.items.length > 0) {
+            // Filter out Catalog (productType === '2') items because their prices are aggregate lowest (often bait-and-switch)
+            const validNaverItems = naverData.items.filter(item => item.productType !== '2' && item.mallName !== '네이버');
+            
+            const deals = validNaverItems.map((item, index) => ({
+              id: `naver_${index}`,
               master_id: 'M_EXTERNAL', 
-              mall_name: item.source || '구글쇼핑',
-              name: item.title,
-              rawPrice: price,
-              isWow: (item.source || '').includes('쿠팡'),
-              isNaverFresh: (item.source || '').includes('네이버'),
-              hasShinsegaeCoupon: (item.source || '').includes('SSG') || (item.source || '').includes('이마트'),
+              mall_name: item.mallName,
+              name: item.title.replace(/<[^>]*>?/g, ''), 
+              rawPrice: parseInt(item.lprice, 10),
+              isWow: item.mallName.includes('쿠팡'), 
+              isNaverFresh: false, 
+              hasShinsegaeCoupon: item.mallName.includes('SSG') || item.mallName.includes('이마트'),
               category: 'external',
               link: item.link,
-              image: item.thumbnail,
-              searchSource: 'google'
-            };
-          }).filter(d => d.rawPrice > 0)); // Filter out invalid prices
-        }
-
-        // Sort Combined Deals by absolute lowest price
-        combinedDeals.sort((a, b) => a.rawPrice - b.rawPrice);
-
-        if (combinedDeals.length > 0) {
-          const activeMaster = {
-            master_id: 'M_EXTERNAL',
-            brand_name: '네이버/구글 통합 최저가',
-            product_name: `검색어: ${query}`,
-            standard_capacity: '',
-            barcode_number: '',
-            thumbnail: combinedDeals[0].image || '🌐',
-            category: 'external'
-          };
-          
-          return Response.json({
-            masters: [...mastersData.results, activeMaster],
-            deals: combinedDeals
-          });
+              image: item.image
+            }));
+            
+            if (deals.length > 0) {
+              const activeMaster = {
+                master_id: 'M_EXTERNAL',
+                brand_name: '네이버 쇼핑 실시간',
+                product_name: `검색어: ${query}`,
+                standard_capacity: '',
+                barcode_number: '',
+                thumbnail: deals[0].image || '🌐',
+                category: 'external'
+              };
+              
+              return Response.json({
+                masters: [...mastersData.results, activeMaster],
+                deals: deals
+              });
+            }
+          }
         }
       } catch(err) {
-        console.error("External APIs failed, falling back to local DB.", err);
+        console.error("Naver API failed, falling back to local DB.", err);
       }
     }
     
