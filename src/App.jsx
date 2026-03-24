@@ -13,12 +13,12 @@ const Navigation = () => {
   return (
     <nav className="bottom-nav">
       <button onClick={() => navigate('/')} className={`nav-item ${currentPath === '/' ? 'active' : ''}`}>
-        <Home size={24} />
-        <span>홈</span>
-      </button>
-      <button onClick={() => navigate('/search')} className={`nav-item ${currentPath === '/search' ? 'active' : ''}`}>
         <Search size={24} />
-        <span>비교/검색</span>
+        <span>검색/비교</span>
+      </button>
+      <button onClick={() => navigate('/home')} className={`nav-item ${currentPath === '/home' ? 'active' : ''}`}>
+        <Home size={24} />
+        <span>할인특가</span>
       </button>
       <button onClick={() => navigate('/onboarding')} className={`nav-item ${currentPath === '/onboarding' ? 'active' : ''}`}>
         <User size={24} />
@@ -43,8 +43,8 @@ function App() {
     <div className="app-container">
       <Header />
       <Routes>
-        <Route path="/" element={<DiscoveryFeed />} />
-        <Route path="/search" element={<SearchCompare />} />
+        <Route path="/" element={<SearchCompare />} />
+        <Route path="/home" element={<DiscoveryFeed />} />
         <Route path="/onboarding" element={<Onboarding />} />
       </Routes>
       <Navigation />
