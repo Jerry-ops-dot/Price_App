@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Camera, Search, Mic } from 'lucide-react';
+import { Camera, ExternalLink, Search, Mic } from 'lucide-react';
 import { parseUnit, calculateStandardPrice } from '../utils/priceEngine';
 import { applyMembershipBenefits } from '../utils/membershipCalculator';
 import { searchByImage, scanBarcode } from '../utils/visualSearch';
@@ -27,6 +27,41 @@ function getSourceMeta(product) {
   if (product.source === 'enuri') return { label: '에누리', color: '#f97316' };
   if (product.source === 'naver') return { label: '네이버', color: 'var(--naver)' };
   return product.sourceLabel ? { label: product.sourceLabel, color: 'var(--primary)' } : null;
+}
+
+function getDanawaSearchUrl(query) {
+  return `https://search.danawa.com/dsearch.php?query=${encodeURIComponent(query.trim())}`;
+}
+
+function DanawaSearchLink({ query }) {
+  const normalizedQuery = query.trim();
+  if (!normalizedQuery) return null;
+
+  return (
+    <a
+      href={getDanawaSearchUrl(normalizedQuery)}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '0.35rem',
+        padding: '0.45rem 0.75rem',
+        borderRadius: '999px',
+        border: '1px solid rgba(37, 99, 235, 0.22)',
+        background: 'rgba(37, 99, 235, 0.06)',
+        color: '#2563eb',
+        fontSize: '0.78rem',
+        fontWeight: 800,
+        textDecoration: 'none',
+        whiteSpace: 'nowrap'
+      }}
+    >
+      다나와에서 보기
+      <ExternalLink size={13} />
+    </a>
+  );
 }
 
 export default function SearchCompare() {
@@ -225,7 +260,7 @@ export default function SearchCompare() {
     <div className="page-content animate-fade-in" style={{ paddingBottom: '6rem' }}>
       <h1 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1.2rem', color: 'var(--text-main)' }}>가격 비교 검색</h1>
       
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: searchTerm.trim() ? '0.75rem' : '1.5rem' }}>
         <div style={{ flex: 1, position: 'relative' }}>
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input 
@@ -243,6 +278,12 @@ export default function SearchCompare() {
           <Mic size={20} />
         </button>
       </div>
+
+      {searchTerm.trim() && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
+          <DanawaSearchLink query={searchTerm} />
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {/* Step 1: Loading Product List */}
@@ -304,18 +345,22 @@ export default function SearchCompare() {
 
         {/* Empty State */}
         {!isSearchingText && searchStep === 'select_product' && productCandidates.length === 0 && searchTerm && (
-          <div style={{textAlign:'center', padding:'3rem', color:'var(--text-muted)', fontSize: '0.9rem'}}>검색 결과가 없습니다.</div>
+          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: '0.9rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            검색 결과가 없습니다.
+            <DanawaSearchLink query={searchTerm} />
+          </div>
         )}
 
         {/* Step 3: View Deals (Grouped Results) */}
         {!isSearchingText && searchStep === 'view_deals' && groupedResults.length > 0 && (
-          <div style={{ marginBottom: '1rem' }}>
+          <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
             <button 
               onClick={() => { setSearchStep('input'); setGroupedResults([]); setProductCandidates([]); setSearchTerm(''); }} 
               style={{ padding: '0.5rem 1rem', background: '#f5f5f5', color: 'var(--text-main)', border: '1px solid #ddd', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
             >
               ← 이전으로
             </button>
+            <DanawaSearchLink query={searchTerm} />
           </div>
         )}
         
