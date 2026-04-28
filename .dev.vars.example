@@ -1,0 +1,12 @@
+NAVER_CLIENT_ID=
+NAVER_CLIENT_SECRET=
+
+# Optional external provider templates.
+# Use {query} for URL-encoded search text and {apiKey} for the provider key.
+# Example:
+# DANAWA_SEARCH_URL_TEMPLATE=https://api.example.com/danawa/search?q={query}&key={apiKey}
+# ENURI_SEARCH_URL_TEMPLATE=https://api.example.com/enuri/search?q={query}&key={apiKey}
+DANAWA_API_KEY=
+DANAWA_SEARCH_URL_TEMPLATE=
+ENURI_API_KEY=
+ENURI_SEARCH_URL_TEMPLATE=

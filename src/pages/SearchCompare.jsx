@@ -22,6 +22,13 @@ function getStandardUnit(product, parsedUnit) {
   return null;
 }
 
+function getSourceMeta(product) {
+  if (product.source === 'danawa') return { label: '다나와', color: '#2563eb' };
+  if (product.source === 'enuri') return { label: '에누리', color: '#f97316' };
+  if (product.source === 'naver') return { label: '네이버', color: 'var(--naver)' };
+  return product.sourceLabel ? { label: product.sourceLabel, color: 'var(--primary)' } : null;
+}
+
 export default function SearchCompare() {
   const location = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
@@ -265,6 +272,11 @@ export default function SearchCompare() {
                       {product.name}
                     </div>
                     <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                      {getSourceMeta(product) && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: getSourceMeta(product).color, border: `1px solid ${getSourceMeta(product).color}40`, padding: '0.1rem 0.35rem', borderRadius: '4px' }}>
+                          {getSourceMeta(product).label}
+                        </span>
+                      )}
                       <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)' }}>
                         {product.rawPrice.toLocaleString()}원
                       </span>
@@ -349,6 +361,7 @@ export default function SearchCompare() {
                       <div style={{ flex: 1, paddingRight: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem', flexWrap: 'wrap' }}>
                           <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-main)' }}>{item.mall_name}</span>
+                          {getSourceMeta(item) && <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', border: `1px solid ${getSourceMeta(item).color}40`, color: getSourceMeta(item).color, borderRadius: '4px', fontWeight: 800 }}>{getSourceMeta(item).label}</span>}
                           {item.isCatalog && <span style={{ fontSize: '0.65rem', padding: '0.1rem 0.3rem', background: '#e0e0e0', color: '#555', borderRadius: '4px', fontWeight: 700 }}>옵션별 가격 상이</span>}
                           {item.isWow && <span style={{ fontSize: '0.7rem', color: 'var(--coupang)', fontWeight: 800 }}>로켓</span>}
                           {item.isNaverFresh && <span style={{ fontSize: '0.7rem', color: 'var(--naver)', fontWeight: 800 }}>도착보장</span>}
