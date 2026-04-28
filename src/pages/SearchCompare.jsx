@@ -1,13 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Camera, Search, Mic, ChevronDown, ChevronUp } from 'lucide-react';
+import { Camera, Search, Mic } from 'lucide-react';
 import { parseUnit, calculateStandardPrice } from '../utils/priceEngine';
 import { applyMembershipBenefits } from '../utils/membershipCalculator';
-import { runNERPipeline } from '../utils/nerEngine';
 import { searchByImage, scanBarcode } from '../utils/visualSearch';
 
 // We now only import categoryStandards, masters/deals come from API
 import { categoryStandards } from '../mockData/Master_DB';
+
+function getStandardUnit(product, parsedUnit) {
+  if (categoryStandards[product.category]) {
+    return categoryStandards[product.category].unit;
+  }
+
+  if (!parsedUnit) return null;
+  const normalizedUnit = parsedUnit.toLowerCase();
+  if (normalizedUnit === 'ml' || normalizedUnit === 'l') return '100ml';
+  if (normalizedUnit === 'g' || normalizedUnit === 'kg') return '100g';
+  if (normalizedUnit === 'm' || parsedUnit === '롤') return '10m';
+  if (parsedUnit === '개' || parsedUnit === '입' || parsedUnit === '봉') return '1개';
+  return null;
+}
 
 export default function SearchCompare() {
   const location = useLocation();
@@ -31,7 +44,6 @@ export default function SearchCompare() {
       setSearchTerm(urlQuery);
       fetchProductCandidates(urlQuery);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
   
   const fetchAndGroupResults = async (query = '', targetMasterId = null, currentPrefs = userPrefs, customThumbnail = null) => {
@@ -59,8 +71,8 @@ export default function SearchCompare() {
         let standardPriceObj = null;
         let sortPrice = finalPrice; 
 
-        if (totalNum && categoryStandards[product.category]) {
-          const stdUnit = categoryStandards[product.category].unit;
+        const stdUnit = getStandardUnit(product, unit);
+        if (totalNum && stdUnit) {
           const val = calculateStandardPrice(finalPrice, totalNum, unit, stdUnit);
           if (val) {
             standardPriceObj = { value: val, unit: stdUnit };
@@ -121,10 +133,7 @@ export default function SearchCompare() {
       for (const d of deals) {
         if (!titles.has(d.name)) {
           const { totalNum, unit } = parseUnit(d.name);
-          let stdUnit = '100g';
-          if (unit && (unit.toLowerCase() === 'l' || unit.toLowerCase() === 'ml')) stdUnit = '100ml';
-          else if (unit === '개' || unit === '입' || unit === '봉') stdUnit = '1개';
-          else if (unit === 'm' || unit === '롤') stdUnit = '10m';
+          const stdUnit = getStandardUnit(d, unit) || '100g';
 
           const val = calculateStandardPrice(d.rawPrice, totalNum, unit, stdUnit);
           if (val) {
@@ -290,7 +299,7 @@ export default function SearchCompare() {
         {!isSearchingText && searchStep === 'view_deals' && groupedResults.length > 0 && (
           <div style={{ marginBottom: '1rem' }}>
             <button 
-              onClick={() => { setSearchStep('select_product'); setGroupedResults([]); setSearchTerm(''); fetchProductCandidates(''); }} 
+              onClick={() => { setSearchStep('input'); setGroupedResults([]); setProductCandidates([]); setSearchTerm(''); }} 
               style={{ padding: '0.5rem 1rem', background: '#f5f5f5', color: 'var(--text-main)', border: '1px solid #ddd', borderRadius: '20px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
             >
               ← 이전으로
@@ -298,7 +307,7 @@ export default function SearchCompare() {
           </div>
         )}
         
-        {!isSearchingText && searchStep === 'view_deals' && groupedResults.map((group, idx) => {
+        {!isSearchingText && searchStep === 'view_deals' && groupedResults.map((group) => {
           const isExpanded = expandedMaster === group.masterInfo.master_id || groupedResults.length === 1;
           const bestDeal = group.items[0]; // Already sorted by unit price
 

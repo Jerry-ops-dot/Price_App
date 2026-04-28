@@ -1,25 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { getAISuggestions } from '../utils/aiPrediction';
 import { applyMembershipBenefits } from '../utils/membershipCalculator';
 import { Sparkles, Gift } from 'lucide-react';
 
 export default function DiscoveryFeed() {
-  const [suggestions, setSuggestions] = useState([]);
-  const [userPrefs, setUserPrefs] = useState({ memberships: {}, payment: 'card' });
+  const [suggestions] = useState(() => getAISuggestions());
+  const [userPrefs] = useState(() => {
+    const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
+    return prefs.memberships ? prefs : { memberships: {}, payment: 'card' };
+  });
   const [toast, setToast] = useState(null);
 
   const handleBuy = (itemName) => {
     setToast(`${itemName} 상품을 장바구니에 담았습니다! 🛒`);
     setTimeout(() => setToast(null), 2500);
   };
-
-  useEffect(() => {
-    const prefs = JSON.parse(localStorage.getItem('pickprice_prefs') || '{}');
-    if (prefs.memberships) setUserPrefs(prefs);
-    
-    // Load predictions
-    setSuggestions(getAISuggestions());
-  }, []);
 
   return (
     <div className="page-content animate-fade-in" style={{ paddingBottom: '6rem' }}>

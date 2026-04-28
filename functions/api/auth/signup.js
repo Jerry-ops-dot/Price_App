@@ -3,15 +3,21 @@ import { hashPassword } from './auth_utils';
 export async function onRequestPost({ request, env }) {
   try {
     const { username, password } = await request.json();
-    if (!username || !password || password.length < 4) {
-      return new Response(JSON.stringify({ error: 'Valid username and password (min 4 chars) required' }), { status: 400 });
+    const normalizedUsername = username?.trim();
+
+    if (!normalizedUsername || !/^[a-zA-Z0-9_.-]{4,32}$/.test(normalizedUsername)) {
+      return new Response(JSON.stringify({ error: 'Username must be 4-32 letters, numbers, dots, dashes, or underscores' }), { status: 400 });
+    }
+
+    if (!password || password.length < 8) {
+      return new Response(JSON.stringify({ error: 'Password must be at least 8 characters' }), { status: 400 });
     }
 
     const hashedPassword = await hashPassword(password);
     const userId = crypto.randomUUID();
 
     await env.DB.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)')
-      .bind(userId, username, hashedPassword)
+      .bind(userId, normalizedUsername, hashedPassword)
       .run();
 
     return new Response(JSON.stringify({ success: true, message: 'User created successfully' }), { status: 201 });

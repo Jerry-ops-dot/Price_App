@@ -1,3 +1,15 @@
+function stripHtml(value) {
+  return value.replace(/<[^>]*>?/g, '');
+}
+
+function inferCategory(title) {
+  const normalized = title.toLowerCase();
+  if (/(생수|물|water|콜라|우유|ml|l\b)/i.test(normalized)) return 'drink';
+  if (/(햇반|밥|쌀|g\b|kg\b)/i.test(normalized)) return 'fresh';
+  if (/(휴지|화장지|크리넥스|롤|m\b)/i.test(normalized)) return 'living';
+  return 'external';
+}
+
 export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const query = url.searchParams.get('q');
@@ -25,17 +37,18 @@ export async function onRequestGet(context) {
           const naverData = await naverRes.json();
           if (naverData.items.length > 0) {
             const deals = naverData.items.map((item, index) => {
+              const cleanTitle = stripHtml(item.title);
               const catalogFlag = item.productType === '2' || item.mallName === '네이버';
               return {
                 id: `naver_${index}`,
                 master_id: 'M_EXTERNAL', 
                 mall_name: catalogFlag ? '네이버 가격비교' : item.mallName,
-                name: item.title.replace(/<[^>]*>?/g, ''), 
+                name: cleanTitle, 
                 rawPrice: parseInt(item.lprice, 10),
                 isWow: item.mallName.includes('쿠팡'), 
                 isNaverFresh: item.mallName.includes('네이버'), 
                 hasShinsegaeCoupon: item.mallName.includes('SSG') || item.mallName.includes('이마트'),
-                category: 'external',
+                category: inferCategory(cleanTitle),
                 link: item.link,
                 image: item.image,
                 isCatalog: catalogFlag

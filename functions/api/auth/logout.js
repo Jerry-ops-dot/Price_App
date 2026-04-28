@@ -1,3 +1,5 @@
+import { sessionCookie } from './auth_utils';
+
 export async function onRequestPost({ request, env }) {
   const cookieHeader = request.headers.get('Cookie') || '';
   const match = cookieHeader.match(/session_token=([^;]+)/);
@@ -8,7 +10,7 @@ export async function onRequestPost({ request, env }) {
   }
 
   const headers = new Headers();
-  headers.set('Set-Cookie', 'session_token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict');
+  headers.set('Set-Cookie', sessionCookie('', 0, request.url));
   headers.set('Content-Type', 'application/json');
 
   return new Response(JSON.stringify({ success: true }), { headers });

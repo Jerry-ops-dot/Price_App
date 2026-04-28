@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Star, ShoppingBag, CreditCard, LogOut, Clock, User as UserIcon } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -80,7 +80,7 @@ export default function Onboarding() {
           </h2>
           <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
             <input type="text" placeholder="아이디 (4자 이상)" value={username} onChange={e => setUsername(e.target.value)} style={{ padding: '0.9rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} required minLength={4} />
-            <input type="password" placeholder="비밀번호 (4자 이상)" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: '0.9rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} required minLength={4} />
+            <input type="password" placeholder="비밀번호 (8자 이상)" value={password} onChange={e => setPassword(e.target.value)} style={{ padding: '0.9rem', borderRadius: '8px', border: '1px solid var(--border-color)', outline: 'none' }} required minLength={8} />
             {authError && <div style={{ color: authError.includes('완료') ? 'var(--primary)' : 'var(--shinsegae)', fontSize: '0.8rem', fontWeight: 600, marginTop: '0.2rem' }}>{authError}</div>}
             <button type="submit" style={{ padding: '1rem', background: 'var(--text-main)', color: 'white', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer', marginTop: '0.5rem' }}>
               {authMode === 'login' ? '로그인' : '가입하기'}
